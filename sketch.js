@@ -37,6 +37,7 @@ let rightAnkleP = createPosition()
 function drawStick(v1, v2, radius1, radius2) {
   let list = [];
   for (let i = 0; i < 2; i++) {
+    // get two vector for drawing rectangle
     const rad = atan2(v2.y - v1.y, v2.x - v1.x) + (Math.PI / 2) + (Math.PI * i)
     const p1 = createVector(
       radius1 * cos(rad) + v1.x,
@@ -52,7 +53,6 @@ function drawStick(v1, v2, radius1, radius2) {
     list.push(p2);
   }
 
-
   beginShape();
   vertex(list[0].x, list[0].y);
   vertex(list[1].x, list[1].y);
@@ -67,8 +67,13 @@ function assignPosition(position, keyPosition) {
   position.y = keyPosition.position.y
 }
 
+let legDisplay = false;
+let cameraDiplay = true;
+
 function setup() {
   createCanvas(1280, 720);
+  createCheckbox('leg display', false).changed((e) => legDisplay = e.target.checked);
+  createCheckbox('camera display', true).changed((e) => cameraDiplay = e.target.checked);
   let constraints = {
     video: {
       mandatory: {
@@ -80,22 +85,19 @@ function setup() {
     audio: false
   };
   video = createCapture(constraints);
-  // video.style(`transform:scale(-1, 1)`)
   video.hide();
   poseNet = ml5.poseNet(video, onModelReady);
   poseNet.on('pose', gotPoses);
 }
 
-let logged = 0;
 function gotPoses(poses) {
-  if (logged < 10) {
-    console.log(poses);
-    logged += 1
-  }
-
   if (poses.length > 0) {
+    // nose position as head center point
     let nX = poses[0].pose.keypoints[0].position.x;
     let nY = poses[0].pose.keypoints[0].position.y;
+
+    noseX = lerp(noseX, nX, 0.5);
+    noseY = lerp(noseY, nY, 0.5);
 
     assignPosition(leftShoulder, poses[0].pose.keypoints[5]);
     assignPosition(rightShoulder, poses[0].pose.keypoints[6]);
@@ -110,9 +112,6 @@ function gotPoses(poses) {
     assignPosition(rightHip, poses[0].pose.keypoints[12]);
     assignPosition(rightKnee, poses[0].pose.keypoints[14]);
     assignPosition(rightAnkle, poses[0].pose.keypoints[16]);
-
-    noseX = lerp(noseX, nX, 0.5);
-    noseY = lerp(noseY, nY, 0.5);
 
     leftShoulderP.x = lerp(leftShoulderP.x, leftShoulder.x, 0.5);
     leftShoulderP.y = lerp(leftShoulderP.y, leftShoulder.y, 0.5);
@@ -149,7 +148,6 @@ function gotPoses(poses) {
 
     rightAnkleP.x = lerp(rightAnkleP.x, rightAnkle.x, 0.5);
     rightAnkleP.y = lerp(rightAnkleP.y, rightAnkle.y, 0.5);
-
   }
 }
 
@@ -159,10 +157,10 @@ function onModelReady() {
 
 function draw() {
   image(video, 0, 0);
-  // background(255, 255, 255);
+  if (!cameraDiplay) {
+    background(255, 255, 255);
+  }
   fill(11, 25, 97);
-
-
   let v1 = createVector(leftShoulderP.x, leftShoulderP.y);
   let v2 = createVector(leftElbowP.x, leftElbowP.y);
   let v3 = createVector(leftWristP.x, leftWristP.y);
@@ -178,30 +176,17 @@ function draw() {
   let v11 = createVector(rightKneeP.x, rightKneeP.y);
   let v12 = createVector(rightAnkleP.x, rightAnkleP.y);
 
-
-  //   line(leftHipP.x, leftHipP.y, leftKneeP.x, leftKneeP.y);
-  //   line(rightHipP.x, rightHipP.y, rightKneeP.x, rightKneeP.y);
-  //   line(leftKneeP.x, leftKneeP.y, leftAnkleP.x, leftAnkleP.y);
-  //   line(rightKneeP.x, rightKneeP.y, rightAnkleP.x, rightAnkleP.y);
-
   stroke(11, 25, 97);
-  // strokeWeight(100);
 
-  const d1 = v1.dist(v4); // shoulder dist
+  const d1 = v1.dist(v4); // left shoulder and right shoulder dist
+  const d2 = v8.dist(v11); // knee dist
 
-  const r1 = 120
-  const r2 = 90
-  const r3 = 75
+  const r1 = 140
+  const r2 = 100
+  const r3 = 85
 
 
   if (d1 >= 180) {
-    // only one hand
-    // const multipler = 200 / d1;
-    // v1.mult(multipler);
-    // v2.mult(multipler);
-    // v3.mult(multipler);
-    // v4.mult(multipler);
-
     ellipse(v1.x, v1.y, r1);
     ellipse(v2.x, v2.y, r2);
     ellipse(v3.x, v3.y, r3);
@@ -215,6 +200,8 @@ function draw() {
     drawStick(v5, v6, r2 / 2, r3 / 2);
 
   } else if (d1 < 180) {
+    // if two shoulder is too close, only display one shoulder
+    // since z position is not recorded, display left shoulder always
     ellipse(v1.x, v1.y, r1);
     ellipse(v2.x, v2.y, r2);
     ellipse(v3.x, v3.y, r3);
@@ -222,17 +209,30 @@ function draw() {
     drawStick(v2, v3, r2 / 2, r3 / 2);
   }
 
+  if (legDisplay) {
+    if (d2 < 100) {
+      ellipse(v7.x, v7.y, r1);
+      ellipse(v8.x, v8.y, r2);
+      ellipse(v9.x, v9.y, r3);
+      drawStick(v7, v8, r1 / 2, r2 / 2);
+      drawStick(v8, v9, r2 / 2, r3 / 2);
+    } else {
+      ellipse(v7.x, v7.y, r1);
+      ellipse(v8.x, v8.y, r2);
+      ellipse(v9.x, v9.y, r3);
+      ellipse(v10.x, v10.y, r1);
+      ellipse(v11.x, v11.y, r2);
+      ellipse(v12.x, v12.y, r3);
 
-  // leg
-  // ellipse(v7.x, v7.y, r1);
-  // ellipse(v8.x, v8.y, r2);
-  // ellipse(v9.x, v9.y, r2);
-  // ellipse(v10.x, v10.y, r2);
-  // drawStick(v7, v8, r1/2, r2/2);
-  // drawStick(v9, v10, r2/2, r3/2);
-  // drawStick(v11, v12, r2/2, r3/2);
+      drawStick(v7, v8, r1 / 2, r2 / 2);
+      drawStick(v8, v9, r2 / 2, r3 / 2);
+      drawStick(v10, v11, r1 / 2, r2 / 2);
+      drawStick(v11, v12, r2 / 2, r3 / 2);
+
+    }
+  }
 
   noStroke();
   let center = createVector((v1.x + v4.x) / 2, (v1.y + v4.y) / 2);
-  ellipse(noseX, noseY, 200);
+  ellipse(noseX, noseY, 220);
 }
