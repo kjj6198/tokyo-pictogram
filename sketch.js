@@ -4,38 +4,67 @@ let noseX = 0;
 let noseY = 0;
 
 function createPosition() {
-  return { x: 0, y: 0 };
+  return { x: 0, y: 0 }
 }
 
-let leftShoulderP = createPosition();
-let leftShoulder = createPosition();
-let leftElbow = createPosition();
-let leftElbowP = createPosition();
-let leftWrist = createPosition();
-let leftWristP = createPosition();
-let leftHip = createPosition();
-let leftHipP = createPosition();
-let leftKnee = createPosition();
-let leftKneeP = createPosition();
-let leftAnkle = createPosition();
-let leftAnkleP = createPosition();
+let leftShoulderP = createPosition()
+let leftShoulder = createPosition()
+let leftElbow = createPosition()
+let leftElbowP = createPosition()
+let leftWrist = createPosition()
+let leftWristP = createPosition()
+let leftHip = createPosition()
+let leftHipP = createPosition()
+let leftKnee = createPosition()
+let leftKneeP = createPosition()
+let leftAnkle = createPosition()
+let leftAnkleP = createPosition()
 
-let rightShoulderP = createPosition();
-let rightShoulder = createPosition();
-let rightElbow = createPosition();
-let rightElbowP = createPosition();
-let rightWrist = createPosition();
-let rightWristP = createPosition();
-let rightHip = createPosition();
-let rightHipP = createPosition();
-let rightKnee = createPosition();
-let rightKneeP = createPosition();
-let rightAnkle = createPosition();
-let rightAnkleP = createPosition();
+
+let rightShoulderP = createPosition()
+let rightShoulder = createPosition()
+let rightElbow = createPosition()
+let rightElbowP = createPosition()
+let rightWrist = createPosition()
+let rightWristP = createPosition()
+let rightHip = createPosition()
+let rightHipP = createPosition()
+let rightKnee = createPosition()
+let rightKneeP = createPosition()
+let rightAnkle = createPosition()
+let rightAnkleP = createPosition()
+
+function drawStick(v1, v2, radius1, radius2) {
+  let list = [];
+  for (let i = 0; i < 2; i++) {
+    const rad = atan2(v2.y - v1.y, v2.x - v1.x) + (Math.PI / 2) + (Math.PI * i)
+    const p1 = createVector(
+      radius1 * cos(rad) + v1.x,
+      radius1 * sin(rad) + v1.y
+    )
+
+    const p2 = createVector(
+      radius2 * cos(rad) + v2.x,
+      radius2 * sin(rad) + v2.y
+    )
+
+    list.push(p1);
+    list.push(p2);
+  }
+
+
+  beginShape();
+  vertex(list[0].x, list[0].y);
+  vertex(list[1].x, list[1].y);
+  vertex(list[3].x, list[3].y);
+  vertex(list[2].x, list[2].y);
+  endShape();
+}
+
 
 function assignPosition(position, keyPosition) {
-  position.x = keyPosition.position.x;
-  position.y = keyPosition.position.y;
+  position.x = keyPosition.position.x
+  position.y = keyPosition.position.y
 }
 
 function setup() {
@@ -44,24 +73,24 @@ function setup() {
     video: {
       mandatory: {
         minWidth: 1080,
-        minHeight: 680,
+        minHeight: 680
       },
-      optional: [{ maxFrameRate: 30 }],
+      optional: [{ maxFrameRate: 30 }]
     },
-    audio: false,
+    audio: false
   };
-  // video = createCapture(constraints);
-  video = createVideo("C0580.mov", () => video.play());
+  video = createCapture(constraints);
+  // video.style(`transform:scale(-1, 1)`)
   video.hide();
-  poseNet = ml5.poseNet(video, modelReady);
-  poseNet.on("pose", gotPoses);
+  poseNet = ml5.poseNet(video, onModelReady);
+  poseNet.on('pose', gotPoses);
 }
 
 let logged = 0;
 function gotPoses(poses) {
   if (logged < 10) {
     console.log(poses);
-    logged += 1;
+    logged += 1
   }
 
   if (poses.length > 0) {
@@ -120,11 +149,12 @@ function gotPoses(poses) {
 
     rightAnkleP.x = lerp(rightAnkleP.x, rightAnkle.x, 0.5);
     rightAnkleP.y = lerp(rightAnkleP.y, rightAnkle.y, 0.5);
+
   }
 }
 
-function modelReady() {
-  console.log("model ready");
+function onModelReady() {
+  console.log('model is available now!');
 }
 
 function draw() {
@@ -132,10 +162,6 @@ function draw() {
   // background(255, 255, 255);
   fill(11, 25, 97);
 
-  // ellipse(leftShoulderP.x, leftShoulderP.y, 80);
-  // ellipse(rightShoulderP.x, rightShoulderP.y, 80);
-
-  //  shoulder to elbow
 
   let v1 = createVector(leftShoulderP.x, leftShoulderP.y);
   let v2 = createVector(leftElbowP.x, leftElbowP.y);
@@ -144,34 +170,69 @@ function draw() {
   let v5 = createVector(rightElbowP.x, rightElbowP.y);
   let v6 = createVector(rightWristP.x, rightWristP.y);
 
-  stroke(11, 25, 97);
-  strokeWeight(100);
+  let v7 = createVector(leftHipP.x, leftHipP.y);
+  let v8 = createVector(leftKneeP.x, leftKneeP.y);
+  let v9 = createVector(leftAnkleP.x, leftAnkleP.y);
 
-  const d1 = v1.dist(v4); // shoulder dist
-  // console.log(d1)
-  if (d1 >= 180) {
-    // only one hand
-    const multipler = 250 / d1;
-    v1.mult(multipler);
-    v2.mult(multipler);
-    v3.mult(multipler);
-    v4.mult(multipler);
+  let v10 = createVector(rightHipP.x, rightHipP.y);
+  let v11 = createVector(rightKneeP.x, rightKneeP.y);
+  let v12 = createVector(rightAnkleP.x, rightAnkleP.y);
 
-    line(v1.x, v1.y, v2.x, v2.y);
-    line(v2.x, v2.y, v3.x, v3.y);
-    line(v4.x, v4.y, v5.x, v5.y);
-    line(v5.x, v5.y, v6.x, v6.y);
-  } else if (d1 < 180) {
-    line(v1.x, v1.y, v2.x, v2.y);
-    line(v2.x, v2.y, v3.x, v3.y);
-  }
 
   //   line(leftHipP.x, leftHipP.y, leftKneeP.x, leftKneeP.y);
   //   line(rightHipP.x, rightHipP.y, rightKneeP.x, rightKneeP.y);
   //   line(leftKneeP.x, leftKneeP.y, leftAnkleP.x, leftAnkleP.y);
   //   line(rightKneeP.x, rightKneeP.y, rightAnkleP.x, rightAnkleP.y);
 
+  stroke(11, 25, 97);
+  // strokeWeight(100);
+
+  const d1 = v1.dist(v4); // shoulder dist
+
+  const r1 = 120
+  const r2 = 90
+  const r3 = 75
+
+
+  if (d1 >= 180) {
+    // only one hand
+    // const multipler = 200 / d1;
+    // v1.mult(multipler);
+    // v2.mult(multipler);
+    // v3.mult(multipler);
+    // v4.mult(multipler);
+
+    ellipse(v1.x, v1.y, r1);
+    ellipse(v2.x, v2.y, r2);
+    ellipse(v3.x, v3.y, r3);
+    ellipse(v4.x, v4.y, r1);
+    ellipse(v5.x, v5.y, r2);
+    ellipse(v6.x, v6.y, r3);
+
+    drawStick(v1, v2, r1 / 2, r2 / 2);
+    drawStick(v2, v3, r2 / 2, r3 / 2);
+    drawStick(v4, v5, r1 / 2, r2 / 2);
+    drawStick(v5, v6, r2 / 2, r3 / 2);
+
+  } else if (d1 < 180) {
+    ellipse(v1.x, v1.y, r1);
+    ellipse(v2.x, v2.y, r2);
+    ellipse(v3.x, v3.y, r3);
+    drawStick(v1, v2, r1 / 2, r2 / 2);
+    drawStick(v2, v3, r2 / 2, r3 / 2);
+  }
+
+
+  // leg
+  // ellipse(v7.x, v7.y, r1);
+  // ellipse(v8.x, v8.y, r2);
+  // ellipse(v9.x, v9.y, r2);
+  // ellipse(v10.x, v10.y, r2);
+  // drawStick(v7, v8, r1/2, r2/2);
+  // drawStick(v9, v10, r2/2, r3/2);
+  // drawStick(v11, v12, r2/2, r3/2);
+
   noStroke();
   let center = createVector((v1.x + v4.x) / 2, (v1.y + v4.y) / 2);
-  ellipse(center.x, center.y - 150, 200);
+  ellipse(noseX, noseY, 200);
 }
